@@ -2,40 +2,27 @@
 #include <cstdio>
 #include <Windows.h>
 #include <jni.h>
-
+#include "JNI.h"
+#include "Hooks.h"
 
 void MainThread(HMODULE module) {
 
-	JavaVM* p_jvm{ nullptr };
-	jint result = JNI_GetCreatedJavaVMs(&p_jvm, 1, nullptr);
+	p_jni = std::make_unique<JNI>();
+	p_hooks = std::make_unique<Hooks>();
 
-	JNIEnv* p_env{ nullptr };
-	p_jvm->AttachCurrentThread((void**)&p_env, nullptr);
+	while (!GetAsyncKeyState(VK_END)){
 
-	jclass mouse_class{ p_env->FindClass("org/lwjgl/input/Mouse") };
+		if (GetAsyncKeyState(VK_XBUTTON1)){
 
-	if (mouse_class == 0){
-		printf("Failed to get Mouse class\n");
-		MessageBoxA(0, "ERROR", "Check console", MB_ICONERROR);
-		FreeLibrary(module);
-	}
-
-	jmethodID is_button_down_id{ p_env->GetStaticMethodID(mouse_class, "isButtonDown", "(I)Z") };
-	if (is_button_down_id == 0) {
-		printf("Erro ao capturar o metodo de input do Mouse");
-		MessageBoxA(0, "ERRO", "Verifique o Console", MB_ICONERROR);
-		FreeLibrary(module);
-	}
-
-	while (!GetAsyncKeyState(VK_END)) {
-		static jint arg{ 0 }; 
-
-		if (p_env->CallStaticBooleanMethodA(mouse_class, is_button_down_id, (jvalue*)&arg))
-		{
-			printf("Mouse clicado!\n");
+			p_jni->p_jrobot->mousePress(16);
+			printf("botao pressionado\n");
+			p_jni->p_jrobot->mouseRelease(16);
+			printf("botao solto\n");
 		}
 	}
+
 	FreeLibrary(module);
+
 }
 
 bool __stdcall DllMain(HINSTANCE instance, DWORD reason, LPVOID reserved) {
